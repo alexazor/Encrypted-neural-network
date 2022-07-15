@@ -5,26 +5,13 @@ class Neural_Network():
     """
     Simple Neural Network class
 
-    :param layers: Number of neuron per layer. The first number describes the input layer and the last number describes the output layer
-    :type layers: int list
+    Attributes:
 
-    :param lr: Learning Rate for backpropagation
-    :type lr: double
+        layers: int list
+            List of numbers
 
-    :param activation_function_name: Name of the activation function
-    :type activation_function_name: string
-
-    :param cost_function_name: Name of the cost function
-    :type cost_function_name: string
-
-    :param weights_list: List of the different weight matrixes. The matrix of index `i` is used to go from layer `i` to layer `i + 1`
-    :type biais_list: numpy matrixes list
-
-    :param pipbias_list: List of the different bias vector. The vector of index `i` is used to go from layer `i` to layer `i + 1`
-    :type bias_list: numpy vector list
-
-    :param weigths_and_bias: Used to create a Neural Network instance with a specific set of weight
-    :type weigths_and_bias: numpy matrixes list list
+        lr: double
+            Learning rate
 
     """
 
@@ -53,6 +40,7 @@ class Neural_Network():
         :param activation_function_name: Name of the activation function we use
         :rtype: numpy matrix
         """
+        return 0
 
     # Cost
 
@@ -71,3 +59,50 @@ class Neural_Network():
 
     def __private_function(self, x):
         return x
+
+    def google(self, x, y):
+        """
+        Args:
+            x (int) : abscisse
+
+            y (int) : ordonnées
+
+        Returns:
+            z: vaut toujours 1
+        """
+        return 1
+
+    def sphinx(self, x, y):
+        """
+        :param x: abscisse
+        :type x: int
+
+        :param y: ordonnées
+        :type y: int
+
+        :returns: z
+        :rtype: int
+        """
+        return 2
+
+
+# :param layers: Number of neuron per layer. The first number describes the input layer and the last number describes the output layer
+# :type layers: int list
+
+# :param lr: Learning Rate for backpropagation
+# :type lr: double
+
+# :param activation_function_name: Name of the activation function
+# :type activation_function_name: string
+
+# :param cost_function_name: Name of the cost function
+# :type cost_function_name: string
+
+# :param weights_list: List of the different weight matrixes. The matrix of index `i` is used to go from layer `i` to layer `i + 1`
+# :type biais_list: numpy matrixes list
+
+# :param pipbias_list: List of the different bias vector. The vector of index `i` is used to go from layer `i` to layer `i + 1`
+# :type bias_list: numpy vector list
+
+# :param weigths_and_bias: Used to create a Neural Network instance with a specific set of weight
+# :type weigths_and_bias: numpy matrixes list list
