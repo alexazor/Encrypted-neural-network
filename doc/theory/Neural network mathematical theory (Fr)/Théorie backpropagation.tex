@@ -1,0 +1,41 @@
+\documentclass[12pt]{article}
+
+\usepackage[french]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath}%
+%\usepackage{amsfonts}%
+\usepackage{amssymb}
+\usepackage{stmaryrd}
+\usepackage[arrowdel]{physics}
+
+%\newcommand{\N}{\mathbb{N}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\ssi}{\Leftrightarrow}
+%\newcommand{\dif}{\mathop{}\!\mathrm{d}}
+%\newcommand{\abs}[1]{\left|#1\right|}
+%\newcommand{\norm}[2]{\left\|#1\right\|_{#2}}
+%\newcommand{\ens}[2]{\left\{#1\big\rvert#2\right\}}
+\newcommand{\nrange}[2]{\left\llbracket#1, #2\right\rrbracket}
+\newcommand{\fct}[4]{\left\{\begin{array}{ccc}
+															#1 & \longrightarrow & #2 \\
+															#3 & \longmapsto		 & #4
+														\end{array}
+														\right.}
+
+\begin{document}
+	\author{Alexandre \textsc{AZOR}}
+	\title{Théorie mathématique pour les forwardpropagation et backpropagation}
+	\maketitle
+	
+	\section{Notation}
+		\input{01-Notations}
+		
+	\section{Forwardpropagation}
+		\input{02-Forwardpropagation}
+		
+	\section{Backpropagation}
+		\input{03-Backpropagation}
+		
+	\end{document}
