@@ -73,80 +73,96 @@
 <dt class="sig sig-object py" id="neural_network.Neural_Network">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">neural_network.</span></span><span class="sig-name descname"><span class="pre">Neural_Network</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation_function_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ReLU'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_function_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'MSE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights_and_bias</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_network.html#Neural_Network"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_network.Neural_Network" title="Permalink to this definition"></a></dt>
 <dd><p>Simple Neural Network class</p>
-<p>Attributes:</p>
-<blockquote>
-<div><dl class="simple">
-<dt>layers: int list</dt><dd><p>List of numbers</p>
+<dl>
+<dt>Attributes:</dt><dd><dl class="simple">
+<dt>layers: int list</dt><dd><p>Number of neuron per layer. The first number describes the input layer and the last number describes the output layer</p>
 </dd>
 <dt>lr: double</dt><dd><p>Learning rate</p>
 </dd>
+<dt>activation_function_name: string</dt><dd><p>Name of the activation function</p>
+</dd>
+<dt>cost_function_name: string</dt><dd><p>Name of the cost function</p>
+</dd>
+<dt>weight_list: numpy matrix list</dt><dd><p>List of the different weight matrixes. The matrix of index <cite>i</cite> is used to go from layer <cite>i</cite> to layer <cite>i + 1</cite></p>
+</dd>
+<dt>biais_list: numpy vector list</dt><dd><p>List of the different bias vector. The vector of index <cite>i</cite> is used to go from layer <cite>i</cite> to layer <cite>i + 1</cite></p>
+</dd>
 </dl>
-</div></blockquote>
+</dd>
+<dt>Parameters:</dt><dd><dl>
+<dt>weight_and_bias: numpy matrixes list list</dt><dd><p>If different of <cite>None</cite>, contains a weight list and a biais list ready to use</p>
+<p>It is not an attribute but is a parameter of the constructor</p>
+</dd>
+<dt>intermediates: numpy matrix list</dt><dd><p>The first element is a matrix which each column is an input vector
+For <cite>k</cite> different from 0, <cite>intermediate[k]</cite> is a matrix which each column is the vector of values of layer <cite>i</cite> before activation associated with the corresponding input vector</p>
+</dd>
+</dl>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="neural_network.Neural_Network.activation">
-<span class="sig-name descname"><span class="pre">activation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">activation_function_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_network.html#Neural_Network.activation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_network.Neural_Network.activation" title="Permalink to this definition"></a></dt>
-<dd><p>Activation function</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>activation_function_name</strong> – Name of the activation function we use</p>
+<span class="sig-name descname"><span class="pre">activation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_network.html#Neural_Network.activation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_network.Neural_Network.activation" title="Permalink to this definition"></a></dt>
+<dd><p>Choose the activation function to use</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>z (float): Value of a neuron before activation</p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>numpy matrix</p>
+<dt>Returns:</dt><dd><p>a (float): Value of a neuron after activation</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="neural_network.Neural_Network.cost">
-<span class="sig-name descname"><span class="pre">cost</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cost_function_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_network.html#Neural_Network.cost"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_network.Neural_Network.cost" title="Permalink to this definition"></a></dt>
-<dd><p>Cost function to minimise</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>double</p>
+<span class="sig-name descname"><span class="pre">cost</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_network.html#Neural_Network.cost"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_network.Neural_Network.cost" title="Permalink to this definition"></a></dt>
+<dd><p>Choose the cost function to use</p>
+<dl>
+<dt>Args:</dt><dd><p>y_pred (numpy vector): Predicted value</p>
+<p>y (numpy vector): Actual value to be predicted</p>
+</dd>
+<dt>Returns:</dt><dd><p>cst (float): Cost value</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="neural_network.Neural_Network.google">
-<span class="sig-name descname"><span class="pre">google</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_network.html#Neural_Network.google"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_network.Neural_Network.google" title="Permalink to this definition"></a></dt>
-<dd><dl>
-<dt>Args:</dt><dd><p>x (int) : abscisse</p>
-<p>y (int) : ordonnées</p>
+<dt class="sig sig-object py" id="neural_network.Neural_Network.grad_activation">
+<span class="sig-name descname"><span class="pre">grad_activation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_network.html#Neural_Network.grad_activation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_network.Neural_Network.grad_activation" title="Permalink to this definition"></a></dt>
+<dd><p>Gradient of the chosen activation function</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>z (float): Value of a neuron before activation</p>
 </dd>
-<dt>Returns:</dt><dd><p>z: vaut toujours 1</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="neural_network.Neural_Network.numpy">
-<span class="sig-name descname"><span class="pre">numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_network.html#Neural_Network.numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_network.Neural_Network.numpy" title="Permalink to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>x<span class="classifier">int</span></dt><dd><p>abscisse</p>
-</dd>
-<dt>y<span class="classifier">int</span></dt><dd><p>ordonnées</p>
-</dd>
-<dt>int</dt><dd><p>Vaut toujours 3</p>
+<dt>Returns:</dt><dd><p>g_a (numpy vector): Derivative of the activation function applied on <cite>z</cite></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="neural_network.Neural_Network.sphinx">
-<span class="sig-name descname"><span class="pre">sphinx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_network.html#Neural_Network.sphinx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_network.Neural_Network.sphinx" title="Permalink to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<em>int</em>) – abscisse</p></li>
-<li><p><strong>y</strong> (<em>int</em>) – ordonnées</p></li>
-</ul>
+<dt class="sig sig-object py" id="neural_network.Neural_Network.grad_cost">
+<span class="sig-name descname"><span class="pre">grad_cost</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_network.html#Neural_Network.grad_cost"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_network.Neural_Network.grad_cost" title="Permalink to this definition"></a></dt>
+<dd><p>Choose the activation function to use</p>
+<dl>
+<dt>Args:</dt><dd><p>y_pred (numpy vector): Predicted value</p>
+<p>y (numpy vector): Actual value to be predicted</p>
 </dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>z</p>
+<dt>Returns:</dt><dd><p>g_cst (numpy vector): Gradient of the function when <cite>y</cite> is fixed</p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>int</p>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="neural_network.Neural_Network.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/neural_network.html#Neural_Network.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#neural_network.Neural_Network.predict" title="Permalink to this definition"></a></dt>
+<dd><p>Return the predicted value for each column of the matrix <cite>Z0</cite></p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>Z0 (numpy matrix): </dt><dd><p>Matrix which each column is an input vector</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>Y (numpy matrix):</dt><dd><p>Matrix which each column is the predicted value for the corresponding column of <cite>Z0</cite></p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>

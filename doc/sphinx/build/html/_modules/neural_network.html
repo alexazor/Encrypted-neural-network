@@ -62,6 +62,7 @@
              
   <h1>Source code for neural_network</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
 
 
 <div class="viewcode-block" id="Neural_Network"><a class="viewcode-back" href="../index.html#neural_network.Neural_Network">[docs]</a><span class="k">class</span> <span class="nc">Neural_Network</span><span class="p">():</span>
@@ -69,116 +70,157 @@
 <span class="sd">    Simple Neural Network class</span>
 
 <span class="sd">    Attributes:</span>
-
 <span class="sd">        layers: int list</span>
-<span class="sd">            List of numbers</span>
+<span class="sd">            Number of neuron per layer. The first number describes the input layer and the last number describes the output layer</span>
 
 <span class="sd">        lr: double</span>
-<span class="sd">            Learning rate</span>
+<span class="sd">            Learning rate </span>
+
+<span class="sd">        activation_function_name: string</span>
+<span class="sd">            Name of the activation function</span>
+
+<span class="sd">        cost_function_name: string</span>
+<span class="sd">            Name of the cost function</span>
+
+<span class="sd">        weight_list: numpy matrix list</span>
+<span class="sd">            List of the different weight matrixes. The matrix of index `i` is used to go from layer `i` to layer `i + 1`</span>
+
+<span class="sd">        biais_list: numpy vector list</span>
+<span class="sd">            List of the different bias vector. The vector of index `i` is used to go from layer `i` to layer `i + 1`</span>
+
+
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        weight_and_bias: numpy matrixes list list</span>
+<span class="sd">            If different of `None`, contains a weight list and a biais list ready to use \n</span>
+<span class="sd">            It is not an attribute but is a parameter of the constructor </span>
+
+<span class="sd">        intermediates: numpy matrix list</span>
+<span class="sd">            The first element is a matrix which each column is an input vector</span>
+<span class="sd">            For `k` different from 0, `intermediate[k]` is a matrix which each column is the vector of values of layer `i` before activation associated with the corresponding input vector </span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="c1"># Initialisation</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layers</span><span class="p">,</span> <span class="n">lr</span><span class="p">,</span> <span class="n">activation_function_name</span><span class="o">=</span><span class="s2">&quot;ReLU&quot;</span><span class="p">,</span> <span class="n">cost_function_name</span><span class="o">=</span><span class="s2">&quot;MSE&quot;</span><span class="p">,</span> <span class="n">weights_and_bias</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="n">layers</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lr</span> <span class="o">=</span> <span class="n">lr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">activation_function_name</span> <span class="o">=</span> <span class="n">activation_function_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cost_function_name</span> <span class="o">=</span> <span class="n">cost_function_name</span>
 
-        <span class="k">if</span><span class="p">(</span><span class="n">weights_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">number_of_layers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span>
+
+        <span class="k">if</span><span class="p">(</span><span class="n">weights_and_bias</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">weights_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">biais_list</span> <span class="o">=</span> <span class="p">[]</span>
 
-            <span class="n">number_of_layers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number_of_layers</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
-                <span class="n">lines</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">layers</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">layers</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
-                <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span> <span class="n">columns</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">weights_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">layer_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number_of_layers</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">lines</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">layers</span><span class="p">[</span><span class="n">layer_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">layers</span><span class="p">[</span><span class="n">layer_index</span><span class="p">]</span>
+
+                <span class="n">weight_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span> <span class="n">columns</span><span class="p">)</span>
+                <span class="n">biais_vector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">weights_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">weight_matrix</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">weights_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">biais_vector</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">weights_list</span> <span class="o">=</span> <span class="n">weights_list</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">weights_list</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">weights_and_biais</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">biais_list</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">weights_and_biais</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 
-    <span class="c1"># Activation</span>
-
-<div class="viewcode-block" id="Neural_Network.activation"><a class="viewcode-back" href="../index.html#neural_network.Neural_Network.activation">[docs]</a>    <span class="k">def</span> <span class="nf">activation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">activation_function_name</span><span class="p">,</span> <span class="n">Z</span><span class="p">):</span>
+<div class="viewcode-block" id="Neural_Network.activation"><a class="viewcode-back" href="../index.html#neural_network.Neural_Network.activation">[docs]</a>    <span class="k">def</span> <span class="nf">activation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Activation function</span>
+<span class="sd">        Choose the activation function to use</span>
 
-<span class="sd">        :param activation_function_name: Name of the activation function we use</span>
-<span class="sd">        :rtype: numpy matrix</span>
+<span class="sd">        Args:</span>
+<span class="sd">            z (float): Value of a neuron before activation</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            a (float): Value of a neuron after activation</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="mi">0</span></div>
 
-    <span class="c1"># Cost</span>
+        <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">activation</span> <span class="o">==</span> <span class="s2">&quot;ReLU&quot;</span><span class="p">):</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">z</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">z</span><span class="p">))</span><span class="o">/</span><span class="mi">2</span>
+            <span class="k">return</span> <span class="n">a</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="si">}</span><span class="s2"> is not among the list of implemented functions&quot;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Neural_Network.cost"><a class="viewcode-back" href="../index.html#neural_network.Neural_Network.cost">[docs]</a>    <span class="k">def</span> <span class="nf">cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cost_function_name</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<div class="viewcode-block" id="Neural_Network.grad_activation"><a class="viewcode-back" href="../index.html#neural_network.Neural_Network.grad_activation">[docs]</a>    <span class="k">def</span> <span class="nf">grad_activation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gradient of the chosen activation function</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            z (float): Value of a neuron before activation</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            g_a (numpy vector): Derivative of the activation function applied on `z`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">activation</span> <span class="o">==</span> <span class="s2">&quot;ReLU&quot;</span><span class="p">):</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">/</span><span class="n">x</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span>
+            <span class="k">return</span> <span class="n">g</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="si">}</span><span class="s2"> is not among the list of implemented functions&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Neural_Network.cost"><a class="viewcode-back" href="../index.html#neural_network.Neural_Network.cost">[docs]</a>    <span class="k">def</span> <span class="nf">cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Cost function to minimise</span>
+<span class="sd">        Choose the cost function to use</span>
 
-<span class="sd">        :rtype: double</span>
+<span class="sd">        Args:</span>
+<span class="sd">            y_pred (numpy vector): Predicted value</span>
+
+<span class="sd">            y (numpy vector): Actual value to be predicted</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            cst (float): Cost value</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span><span class="p">(</span><span class="n">cost_function_name</span> <span class="o">==</span> <span class="s2">&quot;MSE&quot;</span><span class="p">):</span>
-            <span class="k">return</span> <span class="mi">0</span>
+            <span class="n">diff_vect</span> <span class="o">=</span> <span class="n">y_pred</span> <span class="o">-</span> <span class="n">y</span>
+            <span class="n">diff_vect_transpose</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">diff_vect</span><span class="p">)</span>
+            <span class="n">cst_matrix</span> <span class="o">=</span> <span class="n">diff_vect_transpose</span> <span class="o">@</span> <span class="n">diff_vect</span>
+            <span class="n">cst</span> <span class="o">=</span> <span class="n">cst_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">cst</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="mi">0</span></div>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="si">}</span><span class="s2"> is not among the list of implemented functions&quot;</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">__private_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">x</span>
-
-<div class="viewcode-block" id="Neural_Network.google"><a class="viewcode-back" href="../index.html#neural_network.Neural_Network.google">[docs]</a>    <span class="k">def</span> <span class="nf">google</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<div class="viewcode-block" id="Neural_Network.grad_cost"><a class="viewcode-back" href="../index.html#neural_network.Neural_Network.grad_cost">[docs]</a>    <span class="k">def</span> <span class="nf">grad_cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Args:</span>
-<span class="sd">            x (int) : abscisse</span>
+<span class="sd">        Choose the activation function to use</span>
 
-<span class="sd">            y (int) : ordonnées</span>
+<span class="sd">        Args:</span>
+<span class="sd">            y_pred (numpy vector): Predicted value</span>
+
+<span class="sd">            y (numpy vector): Actual value to be predicted</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            z: vaut toujours 1</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="mi">1</span></div>
-
-<div class="viewcode-block" id="Neural_Network.sphinx"><a class="viewcode-back" href="../index.html#neural_network.Neural_Network.sphinx">[docs]</a>    <span class="k">def</span> <span class="nf">sphinx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        :param x: abscisse</span>
-<span class="sd">        :type x: int</span>
-
-<span class="sd">        :param y: ordonnées</span>
-<span class="sd">        :type y: int</span>
-
-<span class="sd">        :returns: z</span>
-<span class="sd">        :rtype: int</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="mi">2</span></div>
-
-<div class="viewcode-block" id="Neural_Network.numpy"><a class="viewcode-back" href="../index.html#neural_network.Neural_Network.numpy">[docs]</a>    <span class="k">def</span> <span class="nf">numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        x : int</span>
-<span class="sd">            abscisse</span>
-<span class="sd">        y : int</span>
-<span class="sd">            ordonnées</span>
-<span class="sd">        int</span>
-<span class="sd">            Vaut toujours 3</span>
+<span class="sd">            g_cst (numpy vector): Gradient of the function when `y` is fixed</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="mi">3</span></div></div>
-<span class="c1"># :param layers: Number of neuron per layer. The first number describes the input layer and the last number describes the output layer</span>
-<span class="c1"># :type layers: int list</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">cost_function_name</span> <span class="o">==</span> <span class="s2">&quot;MSE&quot;</span><span class="p">):</span>
+            <span class="n">diff_vect</span> <span class="o">=</span> <span class="n">y_pred</span> <span class="o">-</span> <span class="n">y</span>
+            <span class="n">g_cst</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">diff_vect</span>
+            <span class="k">return</span> <span class="n">g_cst</span>
 
-<span class="c1"># :param lr: Learning Rate for backpropagation</span>
-<span class="c1"># :type lr: double</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="si">}</span><span class="s2"> is not among the list of implemented functions&quot;</span><span class="p">)</span></div>
 
-<span class="c1"># :param activation_function_name: Name of the activation function</span>
-<span class="c1"># :type activation_function_name: string</span>
+<div class="viewcode-block" id="Neural_Network.predict"><a class="viewcode-back" href="../index.html#neural_network.Neural_Network.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Z0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the predicted value for each column of the matrix `Z0`</span>
 
-<span class="c1"># :param cost_function_name: Name of the cost function</span>
-<span class="c1"># :type cost_function_name: string</span>
+<span class="sd">        Args:</span>
+<span class="sd">            Z0 (numpy matrix): </span>
+<span class="sd">                Matrix which each column is an input vector</span>
 
-<span class="c1"># :param weights_list: List of the different weight matrixes. The matrix of index `i` is used to go from layer `i` to layer `i + 1`</span>
-<span class="c1"># :type biais_list: numpy matrixes list</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Y (numpy matrix):</span>
+<span class="sd">                Matrix which each column is the predicted value for the corresponding column of `Z0`</span>
 
-<span class="c1"># :param pipbias_list: List of the different bias vector. The vector of index `i` is used to go from layer `i` to layer `i + 1`</span>
-<span class="c1"># :type bias_list: numpy vector list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="mi">0</span>
 
-<span class="c1"># :param weigths_and_bias: Used to create a Neural Network instance with a specific set of weight</span>
-<span class="c1"># :type weigths_and_bias: numpy matrixes list list</span>
+        <span class="k">return</span> <span class="n">Y</span></div></div>
 </pre></div>
 
            </div>

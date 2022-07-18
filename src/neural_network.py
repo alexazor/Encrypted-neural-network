@@ -7,12 +7,11 @@ class Neural_Network():
     Simple Neural Network class
 
     Attributes:
-
         layers: int list
-            List of numbers
+            Number of neuron per layer. The first number describes the input layer and the last number describes the output layer
 
         lr: double
-            Learning rate# :param layers: Number of neuron per layer. The first number describes the input layer and the last number describes the output layer
+            Learning rate 
 
         activation_function_name: string
             Name of the activation function
@@ -27,13 +26,13 @@ class Neural_Network():
             List of the different bias vector. The vector of index `i` is used to go from layer `i` to layer `i + 1`
 
         intermediates: numpy matrix list
-            The first element is a matrix which each column is an input vector
+            The first element is a matrix which each column is an input vector\n
             For `k` different from 0, `intermediate[k]` is a matrix which each column is the vector of values of layer `i` before activation associated with the corresponding input vector 
 
 
     Parameters:
         weight_and_bias: numpy matrixes list list
-            If different of `None`, contains a weight list and a biais list ready to use
+            If different of `None`, contains a weight list and a biais list ready to use \n
             It is not an attribute but is a parameter of the constructor 
     """
 
@@ -43,7 +42,9 @@ class Neural_Network():
         self.activation_function_name = activation_function_name
         self.cost_function_name = cost_function_name
 
-        number_of_layers = len(layers)
+        self.number_of_layers = len(layers)
+
+        self.intermediates = [None]*self.number_of_layers
 
         if(weights_and_bias is None):
             self.weights_list = []
@@ -96,46 +97,124 @@ class Neural_Network():
             raise ValueError(
                 f"{self.activation} is not among the list of implemented functions")
 
-    def cost(self, y_pred, y):
+    def cost(self, Y_pred, Y):
         """
         Choose the cost function to use
 
         Args:
-            y_pred (numpy vector): Predicted value
-            y (numpy vector): Actual value to be predicted
+            Y_pred (numpy matrix): 
+                Each column is a predicted vector
+
+            Y (numpy vector): 
+                Each column is the actual vector we tried to predict
 
         Returns:
             cst (float): Cost value
         """
 
-        if(cost_function_name == "MSE"):
-            diff_vect = y_pred - y
+        if(self.cost_function_name == "MSE"):
+            diff_vect = Y_pred - Y
             diff_vect_transpose = np.transpose(diff_vect)
             cst_matrix = diff_vect_transpose @ diff_vect
-            cst = cst_matrix[0][0]
+            cst = np.trace(cst_matrix)
             return cst
 
         else:
             raise ValueError(
                 f"{self.activation} is not among the list of implemented functions")
 
-    def grad_cost(self, y_pred, y):
+    def grad_cost(self, Y_pred, Y):
         """
         Choose the activation function to use
 
         Args:
-            y_pred (numpy vector): Predicted value
-            y (numpy vector): Actual value to be predicted
+            Y_pred (numpy matrix): 
+                Each column is a predicted vector
+
+            Y (numpy vector): 
+                Each column is the actual vector we tried to predict
 
         Returns:
-            g_cst (numpy vector): Gradient of the function when `y` is fixed
+            G_cst (numpy matrix): 
+                Concatenated gradient vectors
         """
 
         if(cost_function_name == "MSE"):
-            diff_vect = y_pred - y
-            g_cst = 2*diff_vect
-            return g_cst
+            diff_vect = Y_pred - Y
+            G_cst = 2*diff_vect
+            return G_cst
 
         else:
             raise ValueError(
                 f"{self.activation} is not among the list of implemented functions")
+
+    def predict(self, A0, isTrain=False):
+        """Return the predicted value for each column of the matrix `A0`
+
+        Args:
+            A0 (numpy matrix): 
+                Matrix which each column is an input vector
+
+            isTrain (bool):
+                Takes the value `True` if the prediction is the part of the training process\n
+                In that case, intermediate value will be saved in the `intermediates` attribute for the backpropagation
+
+        Returns:
+            Y (numpy matrix):
+                Matrix which each column is the predicted value for the corresponding column of `Z0`
+
+        """
+
+        number_of_layers = len(self.layers)
+
+        # k == 0
+        A_k = deepcopy(A0)
+        W_k = self.weights_list[0]
+        b_k = self.biais_list[0]
+        Z_k = W_k @ A_k + b_k
+
+        if(isTrain):
+            self.intermediates = [deepcopy(A0)]
+            self.intermediates.append(deepcopy(Z_k))
+
+        for k in range(1, number_of_layers - 2):
+            A_k = self.activation(Z_k)
+            W_k = self.weights_list[k]
+            b_k = self.biais_list[k]
+            Z_k = W_k @ A_k + b_k
+
+            if(isTrain):
+                self.intermediates.append(deepcopy(Z_k))
+
+        Y = Z_k
+        return Y
+
+    def backpropagation(self, Y):
+        """Backpropagation algorith
+
+        Args:
+            Y (numpy matrix): 
+                Each column is the vector that should have been predicted
+        """
+        Y_Pred = self.intermediates[-1]
+
+        dL_kPlus1 = self.grad_cost(Y_pred, Y)
+
+        for k in range(self.number_of_layers - 2, 0, -1):
+            Z_k = self.intermediates[k]
+            dB_k = dL_kPlus1
+            dW_k = dL_kPlus1@np.transpose(self.activation(Z_k))
+
+            W_k = self.weights_list[k]
+            dL_kPlus1 = self.grad_activation(Z_k)*np.transpose(W_k)@dL_kPlus1
+
+            self.weights_list[k] -= self.lr*dW_k
+            self.biais_list[k] -= self.lr*dB_k
+
+        # k = 0
+        dL_1 = dL_kPlus1
+        A0 = self.intermediates[0]
+        dB_0 = dL_1
+        dW_0 = dL_1@np.transpose(A0)
+        self.weigths_list[0] -= dW_0
+        self.biais_list[0] -= dB_0
