@@ -7,9 +7,5 @@ doc/sphinx/build/*
 
 src/__pychache__
 
-doc/theory/*.aux
-doc/theory/*.log
-doc/theory/*.tcp
-doc/theory/*.tiw
-doc/theory/*.tps
+doc/theory/*
 

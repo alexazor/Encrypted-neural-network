@@ -7,8 +7,9 @@ class Neural_Network():
     Simple Neural Network class
 
     Attributes:
-        layers: int list
-            Number of neuron per layer. The first number describes the input layer and the last number describes the output layer
+        neurons_per_layer: int list
+            Number of neuron per layer\n
+            The first number describes the input layer and the last number describes the output layer
 
         lr: double
             Learning rate 
@@ -36,13 +37,13 @@ class Neural_Network():
             It is not an attribute but is a parameter of the constructor 
     """
 
-    def __init__(self, layers, lr, activation_function_name="ReLU", cost_function_name="MSE", weights_and_bias=None):
-        self.layers = layers
+    def __init__(self, neurons_per_layer, lr, activation_function_name="ReLU", cost_function_name="MSE", weights_and_bias=None):
+        self.neurons_per_layer = neurons_per_layer
         self.lr = lr
         self.activation_function_name = activation_function_name
         self.cost_function_name = cost_function_name
 
-        self.number_of_layers = len(layers)
+        self.number_of_layers = len(neurons_per_layer)
 
         self.intermediates = [None]*self.number_of_layers
 
@@ -51,7 +52,8 @@ class Neural_Network():
             self.biais_list = []
 
             for layer_index in range(number_of_layers - 1):
-                lines, columns = layers[layer_index + 1], layers[layer_index]
+                lines = neurons_per_layer[layer_index + 1]
+                columns = neurons_per_layer[layer_index]
 
                 weight_matrix = np.random.rand(lines, columns)
                 biais_vector = np.random.rand(lines, 1)
@@ -91,8 +93,8 @@ class Neural_Network():
         """
 
         if(self.activation == "ReLU"):
-            g = (1 + np.abs(x)/x)/2
-            return g
+            g_a = (1 + np.abs(x)/x)/2
+            return g_a
         else:
             raise ValueError(
                 f"{self.activation} is not among the list of implemented functions")
@@ -113,9 +115,9 @@ class Neural_Network():
         """
 
         if(self.cost_function_name == "MSE"):
-            diff_vect = Y_pred - Y
-            diff_vect_transpose = np.transpose(diff_vect)
-            cst_matrix = diff_vect_transpose @ diff_vect
+            diff = Y_pred - Y
+            diff_transpose = np.transpose(diff)
+            cst_matrix = diff_transpose @ diff
             cst = np.trace(cst_matrix)
             return cst
 
@@ -140,8 +142,8 @@ class Neural_Network():
         """
 
         if(cost_function_name == "MSE"):
-            diff_vect = Y_pred - Y
-            G_cst = 2*diff_vect
+            diff = Y_pred - Y
+            G_cst = 2*diff
             return G_cst
 
         else:
@@ -165,8 +167,6 @@ class Neural_Network():
 
         """
 
-        number_of_layers = len(self.layers)
-
         # k == 0
         A_k = deepcopy(A0)
         W_k = self.weights_list[0]
@@ -177,7 +177,7 @@ class Neural_Network():
             self.intermediates = [deepcopy(A0)]
             self.intermediates.append(deepcopy(Z_k))
 
-        for k in range(1, number_of_layers - 2):
+        for k in range(1, self.number_of_layers - 2):
             A_k = self.activation(Z_k)
             W_k = self.weights_list[k]
             b_k = self.biais_list[k]
@@ -203,13 +203,13 @@ class Neural_Network():
         for k in range(self.number_of_layers - 2, 0, -1):
             Z_k = self.intermediates[k]
             dB_k = dL_kPlus1
-            dW_k = dL_kPlus1@np.transpose(self.activation(Z_k))
+            dW_k = dL_kPlus1 @ np.transpose(self.activation(Z_k))
 
             W_k = self.weights_list[k]
-            dL_kPlus1 = self.grad_activation(Z_k)*np.transpose(W_k)@dL_kPlus1
+            dL_kPlus1 = self.grad_activation(Z_k)*np.transpose(W_k) @ dL_kPlus1
 
-            self.weights_list[k] -= self.lr*dW_k
-            self.biais_list[k] -= self.lr*dB_k
+            self.weights_list[k] -= self.lr * dW_k
+            self.biais_list[k] -= self.lr * dB_k
 
         # k = 0
         dL_1 = dL_kPlus1
@@ -218,3 +218,23 @@ class Neural_Network():
         dW_0 = dL_1@np.transpose(A0)
         self.weigths_list[0] -= dW_0
         self.biais_list[0] -= dB_0
+
+    def fit_aux(self, X, Y, batchSize=1):
+        A0 = np.transpose(X)
+        Y = np.transpose(Y)
+
+        trainSize = len(X)
+
+        for i in range(trainSize//batchSize):
+            A0_batch = A0[:, i*batchSize: (i+1)*batchSize]
+            Y_batch = Y[:, i*batchSize: (i+1)*batchSize]
+
+            self.predict(A0_batch, isTrain=True)
+            self.backpropagation(Y_batch)
+
+        i += 1
+        A0_batch = A0[:, i*batchSize: -1]
+        Y_batch = Y[:, i*batchSize: -1]
+
+        self.predict(A0_batch, isTrain=True)
+        self.backpropagation(Y_batch)
