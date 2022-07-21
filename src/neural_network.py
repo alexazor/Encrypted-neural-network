@@ -51,15 +51,15 @@ class Neural_Network():
             self.weights_list = []
             self.biais_list = []
 
-            for layer_index in range(number_of_layers - 1):
+            for layer_index in range(self.number_of_layers - 1):
                 lines = neurons_per_layer[layer_index + 1]
                 columns = neurons_per_layer[layer_index]
 
-                weight_matrix = np.random.rand(lines, columns)
-                biais_vector = np.random.rand(lines, 1)
+                weight_matrix = 0.1*np.random.rand(lines, columns)
+                biais_vector = 0.1*np.random.rand(lines, 1)
 
                 self.weights_list.append(deepcopy(weight_matrix))
-                self.weights_list.append(deepcopy(biais_vector))
+                self.biais_list.append(deepcopy(biais_vector))
         else:
             self.weights_list = deepcopy(weights_and_biais[0])
             self.biais_list = deepcopy(weights_and_biais[1])
@@ -75,12 +75,12 @@ class Neural_Network():
             a (float): Value of a neuron after activation
         """
 
-        if(self.activation == "ReLU"):
+        if(self.activation_function_name == "ReLU"):
             a = (z + np.abs(z))/2
             return a
         else:
             raise ValueError(
-                f"{self.activation} is not among the list of implemented functions")
+                f"{self.activation_function_name} is not among the list of implemented functions")
 
     def grad_activation(self, z):
         """Gradient of the chosen activation function
@@ -92,12 +92,12 @@ class Neural_Network():
             g_a (numpy vector): Derivative of the activation function applied on `z`
         """
 
-        if(self.activation == "ReLU"):
-            g_a = (1 + np.abs(x)/x)/2
+        if(self.activation_function_name == "ReLU"):
+            g_a = (1 + np.abs(z)/z)/2
             return g_a
         else:
             raise ValueError(
-                f"{self.activation} is not among the list of implemented functions")
+                f"{self.activation_function_name} is not among the list of implemented functions")
 
     def cost(self, Y_pred, Y):
         """
@@ -115,15 +115,16 @@ class Neural_Network():
         """
 
         if(self.cost_function_name == "MSE"):
+            number_of_vectors = np.shape(Y)[1]
             diff = Y_pred - Y
             diff_transpose = np.transpose(diff)
-            cst_matrix = diff_transpose @ diff
+            cst_matrix = (diff_transpose @ diff)/number_of_vectors
             cst = np.trace(cst_matrix)
             return cst
 
         else:
             raise ValueError(
-                f"{self.activation} is not among the list of implemented functions")
+                f"{self.cost_function_name} is not among the list of implemented functions")
 
     def grad_cost(self, Y_pred, Y):
         """
@@ -141,14 +142,15 @@ class Neural_Network():
                 Concatenated gradient vectors
         """
 
-        if(cost_function_name == "MSE"):
+        if(self.cost_function_name == "MSE"):
+            number_of_vectors = np.shape(Y)[1]
             diff = Y_pred - Y
-            G_cst = 2*diff
+            G_cst = 2*diff/number_of_vectors
             return G_cst
 
         else:
             raise ValueError(
-                f"{self.activation} is not among the list of implemented functions")
+                f"{self.cost_function_name} is not among the list of implemented functions")
 
     def predict(self, A_0, isTrain=False):
         """Return the predicted value for each column of the matrix `A_0`
@@ -168,30 +170,30 @@ class Neural_Network():
         """
 
         # k == 0
-        A_k = deepcopy(A_0)
-        W_k = self.weights_list[0]
-        b_k = self.biais_list[0]
+        A_k = deepcopy(A_0)  # A_0
+        W_k = self.weights_list[0]  # W_0
+        b_k = self.biais_list[0]  # b_0
         columns = np.shape(A_k)[1]
         ones_line = np.ones((1, columns))
-        Z_k = W_k @ A_k + b_k @ ones_line
+        Z_kPlus1 = W_k @ A_k + b_k @ ones_line  # Z_1
 
         if(isTrain):
-            self.intermediates = [deepcopy(A_0)]
-            self.intermediates.append(deepcopy(Z_k))
+            self.intermediates[0] = deepcopy(A_0)
+            self.intermediates[1] = deepcopy(Z_kPlus1)
 
-        for k in range(1, self.number_of_layers - 2):
-            A_k = self.activation(Z_k)
+        for k in range(1, self.number_of_layers - 1):
+            A_k = self.activation(Z_kPlus1)
             W_k = self.weights_list[k]
             b_k = self.biais_list[k]
             columns = np.shape(A_k)[1]
             ones_line = np.ones((1, columns))
-            Z_k = W_k @ A_k + b_k @ ones_line
+            Z_kPlus1 = W_k @ A_k + b_k @ ones_line
 
             if(isTrain):
-                self.intermediates.append(deepcopy(Z_k))
+                self.intermediates[k+1] = deepcopy(Z_kPlus1)
 
-        Y = Z_k
-        return Y
+        Y_pred = Z_kPlus1
+        return Y_pred
 
     def backpropagation(self, Y):
         """Backpropagation algorith
@@ -200,9 +202,11 @@ class Neural_Network():
             Y (numpy matrix):
                 Each column is the vector that should have been predicted
         """
-        Y_Pred = self.intermediates[-1]
+        Y_pred = self.intermediates[self.number_of_layers - 1]
 
         dL_kPlus1 = self.grad_cost(Y_pred, Y)
+
+        ones_column = np.ones((dL_kPlus1.shape[1], 1))
 
         for k in range(self.number_of_layers - 2, 0, -1):
             Z_k = self.intermediates[k]
@@ -210,73 +214,93 @@ class Neural_Network():
             dW_k = dL_kPlus1 @ np.transpose(self.activation(Z_k))
 
             W_k = self.weights_list[k]
-            dL_kPlus1 = self.grad_activation(Z_k)*np.transpose(W_k) @ dL_kPlus1
+            dL_kPlus1 = self.grad_activation(Z_k)*(np.transpose(W_k)
+                                                   @ dL_kPlus1)
 
             self.weights_list[k] -= self.lr * dW_k
-            self.biais_list[k] -= self.lr * dB_k
+            self.biais_list[k] -= self.lr * dB_k @ ones_column
 
         # k = 0
         dL_1 = dL_kPlus1
         A_0 = self.intermediates[0]
-        X = np.transpose(A_0)
         dB_0 = dL_1
-        dW_0 = dL_1 @ X
-        self.weigths_list[0] -= dW_0
-        self.biais_list[0] -= dB_0
+        dW_0 = dL_1 @ np.transpose(A_0)
+        self.weights_list[0] -= dW_0
+        self.biais_list[0] -= dB_0 @ ones_column
 
-    def fit_aux(self, A_0, Y_t, batch_size):
+    def epoch(self, A_0, Y, batch_size):
         """Realise one epoch
 
         Args:
             A_0 (numpy matrix):
                 Concatenation of input vectors
-                Hence, the transpose of the usual `X` matrix
+                It is the transpose of the usual `X` matrix
 
-            Y_t (numpy matrix):
-                Concatenation of the expected vectors for the
+            Y (numpy matrix):
+                Concatenation of the vectors we want to predict
+                It is the transpose of the usual `Y` matrix
 
             batch_size (int):
                 Number of entries treated simultaneously
         """
 
-        actual_train_set_size = np.shape(A_0)[1]
+        train_set_size = np.shape(A_0)[1]
 
-        for i in range(actual_train_set_size//batch_size):
+        for i in range(train_set_size//batch_size):
             A_0_batch = A_0[:, i*batch_size: (i+1)*batch_size]
-            Y_batch = Y_t[:, i*batch_size: (i+1)*batch_size]
+            Y_batch = Y[:, i*batch_size: (i+1)*batch_size]
 
             self.predict(A_0_batch, isTrain=True)
             self.backpropagation(Y_batch)
 
-        i = actual_train_set_size//batch_size
+        i = train_set_size//batch_size
         A_0_batch = A_0[:, i*batch_size:]
         Y_batch = Y[:, i*batch_size:]
 
         self.predict(A_0_batch, isTrain=True)
         self.backpropagation(Y_batch)
 
-    def fit(self, X, Y, max_epoch, batchSize=10):
-        total_set_size = np.shape(X)[0]
-        train_set_size = int(total_set_size*0.75)
-        validation_set_size = total_set_size - train_set_size
+    def fit(self, X_train, Y_train, X_test, Y_test, max_epoch, batch_size=10):
+        """
+        Realises epochs until one of the following condition is met:
+            - the maximum number of epochs is reached
+            - the cost value does no decrease enough
+            - the cost value increases too much
 
-        X_train = np.transpose(X[:train_set_size, :])
-        X_val = np.transpose(X[train_set_size:, :])
-        Y_train = np.transpose(Y[:train_set_size, :])
-        Y_val = np.transpose(Y[train_set_size:, :])
+        Args:
+            X_train (numpy matrix):
+                Concatenation of the input vectors used for the backpropagation
 
-        Y_pred = self.predict(X_val)
-        cost_list = [self.cost(Y_pred, Y_val)]
+            Y_train (numpy matrix):
+               Concatenation of the features vectors we want to predict from `X_train`
+
+            X_test (numpy matrix):
+                Concatenation of the input vectors used to estimate the mean cost value of the algorithm
+
+            Y_test (numpy matrix):
+               Concatenation of the features vectors we want to predict from `X_test
+               `
+            batch_size (int, optional):
+                Number of entries treated simultaneously in an epoch\n
+                Defaults to 10.
+
+        Returns:
+            cost_list(float list):
+                `cost_list[i]` contains the mean cost value on the test set after `i` epochs
+        """
+        Y_pred = self.predict(X_test)
+        cost_list = [self.cost(Y_pred, Y_test)]
         num_epoch = 0
 
         while(num_epoch < max_epoch and
-              (num_epoch == 0
-               or (cost_list[num_epoch] <= cost_list[num_epoch - 1] and cost_list[num_epoch - 1]*0.98 < cost_list[num_epoch])
-               or (cost_list[num_epoch - 1]*1.02 < cost_list[num_epoch]))):
-            self.fit_aux(X_train, Y_train, batch_size)
+              (num_epoch == 0 or cost_list[num_epoch] < cost_list[num_epoch - 1])):
+            # or (cost_list[num_epoch] < cost_list[num_epoch - 1]*0.98)
+            # or (cost_list[num_epoch - 1] <= cost_list[num_epoch] and cost_list[num_epoch] < cost_list[num_epoch - 1]*1.02))):
 
-            Y_pred = self.predict(X_val)
-            cost_list.append(self.cost(Y_pred, Y_val))
+            self.epoch(X_train, Y_train, batch_size)
+
+            Y_pred = self.predict(X_test)
+            cost_list.append(self.cost(Y_pred, Y_test))
             num_epoch += 1
 
         return cost_list

@@ -5,7 +5,9 @@ doc/sphinx/*
 doc/sphinx/build/*
 !doc/sphinx/build/html/
 
-src/__pychache__
+src/__pycache__/*
+src/.ipynb_checkpoints
 
 doc/theory/*
+*test.py
 
