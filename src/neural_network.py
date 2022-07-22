@@ -55,8 +55,8 @@ class Neural_Network():
                 lines = neurons_per_layer[layer_index + 1]
                 columns = neurons_per_layer[layer_index]
 
-                weight_matrix = 0.1*np.random.rand(lines, columns)
-                biais_vector = 0.1*np.random.rand(lines, 1)
+                weight_matrix = np.random.rand(lines, columns)
+                biais_vector = np.random.rand(lines, 1)
 
                 self.weights_list.append(deepcopy(weight_matrix))
                 self.biais_list.append(deepcopy(biais_vector))
@@ -118,8 +118,8 @@ class Neural_Network():
             number_of_vectors = np.shape(Y)[1]
             diff = Y_pred - Y
             diff_transpose = np.transpose(diff)
-            cst_matrix = (diff_transpose @ diff)/number_of_vectors
-            cst = np.trace(cst_matrix)
+            cst_matrix = diff_transpose @ diff
+            cst = np.trace(cst_matrix)/number_of_vectors
             return cst
 
         else:
@@ -218,15 +218,15 @@ class Neural_Network():
                                                    @ dL_kPlus1)
 
             self.weights_list[k] -= self.lr * dW_k
-            self.biais_list[k] -= self.lr * dB_k @ ones_column
+            self.biais_list[k] -= self.lr * (dB_k @ ones_column)
 
         # k = 0
         dL_1 = dL_kPlus1
         A_0 = self.intermediates[0]
         dB_0 = dL_1
         dW_0 = dL_1 @ np.transpose(A_0)
-        self.weights_list[0] -= dW_0
-        self.biais_list[0] -= dB_0 @ ones_column
+        self.weights_list[0] -= self.lr*dW_0
+        self.biais_list[0] -= self.lr*(dB_0 @ ones_column)
 
     def epoch(self, A_0, Y, batch_size):
         """Realise one epoch
@@ -264,8 +264,7 @@ class Neural_Network():
         """
         Realises epochs until one of the following condition is met:
             - the maximum number of epochs is reached
-            - the cost value does no decrease enough
-            - the cost value increases too much
+            - the cost value does no decrease anymore
 
         Args:
             X_train (numpy matrix):
@@ -288,19 +287,23 @@ class Neural_Network():
             cost_list(float list):
                 `cost_list[i]` contains the mean cost value on the test set after `i` epochs
         """
-        Y_pred = self.predict(X_test)
-        cost_list = [self.cost(Y_pred, Y_test)]
+        cost_list = []
         num_epoch = 0
+        progression = 10
 
         while(num_epoch < max_epoch and
-              (num_epoch == 0 or cost_list[num_epoch] < cost_list[num_epoch - 1])):
-            # or (cost_list[num_epoch] < cost_list[num_epoch - 1]*0.98)
-            # or (cost_list[num_epoch - 1] <= cost_list[num_epoch] and cost_list[num_epoch] < cost_list[num_epoch - 1]*1.02))):
+              True):  # (num_epoch <= 1 or cost_list[num_epoch - 1] <= cost_list[num_epoch - 2]*0.995)):
+            #    or (cost_list[num_epoch] < cost_list[num_epoch - 1]*0.99)
+            #    )):  # or (cost_list[num_epoch - 1] <= cost_list[num_epoch] and cost_list[num_epoch] < cost_list[num_epoch - 1]*1.01))):
 
             self.epoch(X_train, Y_train, batch_size)
 
             Y_pred = self.predict(X_test)
             cost_list.append(self.cost(Y_pred, Y_test))
             num_epoch += 1
+
+            while(progression*max_epoch/100 <= num_epoch):
+                print(f"Progression: {progression}%")
+                progression += 10
 
         return cost_list
