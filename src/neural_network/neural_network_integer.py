@@ -1,18 +1,20 @@
 import numpy as np
+import random
+from q_int import Q_int
 from copy import deepcopy
 
 
-class Neural_Network():
+class Neural_Network_Integer():
     """
-    Simple Neural Network class
+    Neural Network class but all manipulated values are integers
 
     Attributes:
         neurons_per_layer: int list
             Number of neuron per layer\n
             The first number describes the input layer and the last number describes the output layer
 
-        lr: double
-            Learning rate
+        lr: int
+            Interger representing the learning rate
 
         activation_function_name: string
             Name of the activation function
@@ -32,14 +34,20 @@ class Neural_Network():
 
 
     Parameters:
+        q_factor: int
+            If [x] represents the floor function applied on x, each value will be represented by [q_factor * x]
+
         weight_and_bias: numpy matrixes list list
             If different of `None`, contains a weight list and a biais list ready to use \n
             It is not an attribute but is a parameter of the constructor
+
+        lr: float
+            Actual learning rate
     """
 
-    def __init__(self, neurons_per_layer, lr, activation_function_name="ReLU", cost_function_name="MSE", weights_and_bias=None):
+    def __init__(self, q_factor, neurons_per_layer, lr, activation_function_name="ReLU", cost_function_name="MSE", weights_and_bias=None):
         self.neurons_per_layer = neurons_per_layer
-        self.lr = lr
+        self.lr = Q_int(lr*q_factor, q_factor)
         self.activation_function_name = activation_function_name
         self.cost_function_name = cost_function_name
 
@@ -55,8 +63,15 @@ class Neural_Network():
                 lines = neurons_per_layer[layer_index + 1]
                 columns = neurons_per_layer[layer_index]
 
-                weight_matrix = np.random.rand(lines, columns)
-                biais_vector = np.random.rand(lines, 1)
+                weight_matrix = np.zeros((lines, columns), dtype=object)
+                biais_vector = np.zeros((lines, 1), dtype=object)
+
+                for line in range(lines):
+                    for column in range(columns):
+                        weight_matrix[line][column] = Q_int(
+                            q_factor*(10*random.random() - 5), q_factor)
+                    biais_vector[line] = Q_int(
+                        q_factor*(10*random.random() - 5), q_factor)
 
                 self.weights_list.append(deepcopy(weight_matrix))
                 self.biais_list.append(deepcopy(biais_vector))
@@ -206,7 +221,9 @@ class Neural_Network():
 
         dL_kPlus1 = self.grad_cost(Y_pred, Y)
 
-        ones_column = np.ones((dL_kPlus1.shape[1], 1))
+        number_of_vectors = dL_kPlus1.shape[1]
+
+        ones_column = np.ones((number_of_vectors, 1))
 
         for k in range(self.number_of_layers - 2, 0, -1):
             Z_k = self.intermediates[k]
@@ -229,7 +246,7 @@ class Neural_Network():
         self.biais_list[0] -= self.lr*(dB_0 @ ones_column)
 
     def epoch(self, A_0, Y, batch_size):
-        """Realise one epoch
+        """Realises one epoch
 
         Args:
             A_0 (numpy matrix):
@@ -260,7 +277,7 @@ class Neural_Network():
         self.predict(A_0_batch, isTrain=True)
         self.backpropagation(Y_batch)
 
-    def fit(self, X_train, Y_train, X_test, Y_test, max_epoch, batch_size=10):
+    def fit(self, X_train, Y_train, X_test, Y_test, max_epoch, batch_size=10, show_progression=True):
         """
         Realises epochs until one of the following condition is met:
             - the maximum number of epochs is reached
@@ -291,19 +308,16 @@ class Neural_Network():
         num_epoch = 0
         progression = 10
 
-        while(num_epoch < max_epoch and
-              True):  # (num_epoch <= 1 or cost_list[num_epoch - 1] <= cost_list[num_epoch - 2]*0.995)):
-            #    or (cost_list[num_epoch] < cost_list[num_epoch - 1]*0.99)
-            #    )):  # or (cost_list[num_epoch - 1] <= cost_list[num_epoch] and cost_list[num_epoch] < cost_list[num_epoch - 1]*1.01))):
-
+        while(num_epoch < max_epoch):
             self.epoch(X_train, Y_train, batch_size)
 
             Y_pred = self.predict(X_test)
             cost_list.append(self.cost(Y_pred, Y_test))
             num_epoch += 1
 
-            while(progression*max_epoch/100 <= num_epoch):
-                print(f"Progression: {progression}%")
-                progression += 10
+            if(show_progression):
+                while(progression*max_epoch/100 <= num_epoch):
+                    print(f"Progression: {progression}%")
+                    progression += 10
 
         return cost_list
